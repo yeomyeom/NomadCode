@@ -1,0 +1,134 @@
+#0.1 
+백엔드 : ExpressJS/ app.get()/ pug/ (req,res) =>  / package.json / babel / nodemon
+이것들을 알고 있어야 진행 가능함
+프론트엔드 : 바닐라JS 
+.classList.add() 등등
+
+#0.2 서버 설정
+zoom 폴더 아래에 npm init -y 입력
+package.json 에 main, scripts 부분 지우기
+설명이랑 라이선스 넣고 싶은것 넣기
+npm -i nodemon -D
+./babel.config.json 랑 nodemon.json 파일 만들기
+./src/server.js 만들고 console.log("hi");
+//nodemon, babel을 설치함
+
+npm i @babel/core -D @babel/cli -D @babel/node -D @babel/preset-env -D 
+//-D의미는 package.json에 devDependencies에 추가한다는 의미 
+
+.gitignore 만들어서 /node_modules 폴더를 업데이트 안하도록 막기
+
+nodemon.json 에 
+{
+    "exec" : "babel-node src/server.js"
+} 추가해서 exec 명령어를 하면 다음과 같은 명령이 실행되도록 함
+
+babel.config.json에
+{
+    "presets": ["@babel/preset-env"]
+} 추가해서 preset을 설정함
+
+package.json 파일에서 devDependencies에 잘 설치되었는지 확인
+
+package.json 파일에서 license 아래 
+  "scripts": {
+    "dev" : "nodemon"
+  },
+추가 의미는 dev는 nodemon을 호출하고 nodemon이 nodemon.json을 살펴보고 exec에 적혀있는 것을 설치함 
+
+//npm run dev 하면 어떤일이 벌어지느냐
+//package.json에 scripts:{"dev":"nodemon"}
+//nodemon.json에서 exec할때 babel-node src/server.js 로 서버 js 경로를 제시해줌
+//babel.config.json에서 presets @babel/preset-env 를 부름
+
+
+npm i express / npm i pug  설치해줌
+
+src/server.js 에 들어가서 
+import express from "express";
+
+const app = express();
+
+console.log("hello");
+
+app.listen(3000);
+입력해줌 3000 으로 서버를 열겠다는 의미
+
+npm run dev 만약 babel-node는 ~실행안되면 npm i @babel/node -g 글로벌 옵션으로 설치하면 됨
+
+오늘한거는 babel nodemon express를 이용해 nodeJS 프로젝트를 구축한거임
+
+
+#0.3 프론트엔드 설정
+src/public/js/app.js 새로 만들기
+
+src.server.js에
+app.set('view engine', 'pug');
+app.set('views', __dirname + "/src/views"); 코드를 const app = express(); 아래에 추가해주고 
+
+src/views/home.pug 파일을 만들어주고 html을 작성함
+html:5 를 입력하면 자동생성해줌
+title 을 자기가 원하는 제목으로 
+doctype html
+html(lang="en")
+    head
+        meta(charset="UTF-8")
+        meta(http-equiv="X-UA-Compatible", content="IE=edge")
+        meta(name="viewport", content="width=device-width, initial-scale=1.0")
+        title Yoom
+    body 
+        h1 It works!
+이런식으로 작성해줌
+
+src/server.js에 
+import express from "express";//express는 views를 설정해주고 render 시켜주는 역할만 함
+//나머지는 웹소켓에서 할것임
+const app = express();
+app.set('view engine', 'pug');
+app.set('views', __dirname + "/views");
+
+app.get('/', (req, res) => res.render("home"));
+
+const handleListen = () => console.log(`Listening on http://localhost:3000`);
+app.listen(3000, handleListen);
+하고 localhost:3000 하면 It works 페이지가 보일것이다.
+
+src/views/home.pug 에 우리가 원하는 스크립트를 넣으면 된다.
+It works 아래에 script(src="/public/js/app.js") 추가
+하지만 페이지를 새로고침 하면 못 불러오는데 다시 src/server.js로 가서
+app.use("public", express.static(__dirname + "/public")) // home.pug에서 static으로 안해주면 app.js 를 불러올 수 없다.
+이 코드를 app.set('views', __dirname + "/views"); 아래에 추가해줘야함
+
+nodemon.json에서 "ignore": ["src/public/*"], 추가해주면 해당 src/public 아래 파일들이 수정될 때마다 재실행 되지 않음
+
+MVP Css를 통해서 home.pug를 예쁘게 꾸며보자
+        title Yoom 밑에
+        link(rel="stylesheet" href="https://unpkg.com/mvp.css")
+home.pug에 추가해줌
+
+
+    body 
+        header
+            h1 Yoom
+        main
+            h2 Welcome to Yoom
+        button Call
+        script(src="/public/js/app.js")
+하고 public/js/app.js alert('hi') 해서 localhost:3000에서 잘 동작하는지 확인해보기 
+
+#0.4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
