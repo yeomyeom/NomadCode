@@ -8,7 +8,7 @@
 zoom 폴더 아래에 npm init -y 입력
 package.json 에 main, scripts 부분 지우기
 설명이랑 라이선스 넣고 싶은것 넣기
-npm -i nodemon -D
+npm i nodemon -D
 ./babel.config.json 랑 nodemon.json 파일 만들기
 ./src/server.js 만들고 console.log("hi");
 //nodemon, babel을 설치함
@@ -179,5 +179,51 @@ WebSocket {
   _eventsCount: 1,
 어쩌구 저쩌구 나오는데 이제 socket 객체로 통신이 가능함
 
-
 server.js(backend)의 socket 변수는 연결된 브라우저를 의미하고 app.js(frontend) socket 변수는 서버를 의미함
+
+#1.4 웹 소켓 메시지
+Server.js
+wss.on("connection", (socket) => {
+    socket.send("connected to server");
+    socket.on("close", () => console.log("disconnected from browser"));//브라우저가 꺼졌는지 추적
+    socket.send("hello");//Hello라는 메시지 보냄
+});
+
+public/js/app.js
+const socket = new WebSocket(`ws://${window.location.host}`); //소켓열고
+open message close 이벤트 리스너 생성
+
+#1.5 복습
+
+#1.6 웹 소켓 채팅 서버 만들기
+server.js 
+const sockets = [];
+    socket.on("message", message => {
+        sockets.forEach(aSocket => aSocket.send(message.toString()));//DB에 있는 모든 소캣을 aSocket에 담고 send 함
+        //socket.send(message.toString());
+    });//브라우저가 서버로 메시지를 보냈을때 listener, 브라우저 메시지 그대로 다시 브라우저로, 서버 - 브라우저 1:1 관계만 연결되어있음
+
+#1.7
+
+json stringify
+
+#1.8 
+왜 socket.send 하면 string으로만 날라가는가?
+이유는 언어에 구애받지 않기 위해서 String으로 날림 누구는 GO 누구는 JS로 서버를 만드는데 send가 JS만 지원하면 안되니
+모든 언어가 가지고 있는 String으로 메시지를 보냄(WebSocket -> 브라우저 API에 정의되어있음)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
