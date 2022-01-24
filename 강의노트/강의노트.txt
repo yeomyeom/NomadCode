@@ -212,6 +212,75 @@ json stringify
 이유는 언어에 구애받지 않기 위해서 String으로 날림 누구는 GO 누구는 JS로 서버를 만드는데 send가 JS만 지원하면 안되니
 모든 언어가 가지고 있는 String으로 메시지를 보냄(WebSocket -> 브라우저 API에 정의되어있음)
 
+#1.9 결론
+프레임워크를 사용하여 우리가 구현한 것들이 정의되어있는 그런 프레임워크 사용방법을 배울꺼임
+
+#2.0 SocketIo vs WebSockets
+socketIo 라이브러리
+실시간 양방향 event 기반
+websocket을 지원하지 않아도 HTTP long-polling 등 다른 라이브러리를 사용한다.
+websocket으로 구현되지 않는 부분도 있음 (자동 재 접속기능 등등)
+websocket으로 연결되지 않으면 socketIo는 다른 방법을 찾아감
+websocket의 부가기능이 아님 websocket을 포함하고 있음
+
+#2.1 socketIO
+localhost:3000/socket.io/socket.io.js 에 각종 function들이 정의 되어있음
+websocket의 부가기능이 아니므로 서버와 브라우저에도 socketio도 설치해야함(브라우저에는 websocket API만 있으므로)
+
+#2.2 SocketIO is Amazing
+socket.send = socket.emit(내가 정한 이벤트 이름, data object, 보낼 함수) // app.js(브라우저)
+socket.on(내가정한 이벤트 이름, 실행할 함수)//server.js
+
+app.js(브라우저)
+function handleRoomSubmit(event){
+    event.preventDefault();
+    const input = form.querySelector("input");
+    socket.emit("enter_room", {payload:input.value}, () => {
+        console.log("server is done!");
+    });//emit(event이름, dataobject(string이 아니여도 됨))
+    input.value = "";
+}//emit 할때 함수도 보낼 수 있음
+
+server.js(서버)
+wsServer.on("connection", socket => {
+    socket.on("enter_room", (msg, done) => {
+        console.log(msg);
+        setTimeout(() => {
+            done();
+        }, 10000);//done 이라는 변수에 프론트의 함수를 실행 할 수 있음
+    });//브라우저에서 보내는 emit(이벤트이름, 실행할 함수)
+});//브라우저에서 오는 connection 받기
+
+#2.3
+app.js (브라우저) 에서 socket.emit("서버에서 받을 메시지 타입", data object 여러개 보낼 수 있음, ...)
+서버를 종료하면 자동으로 app.js에서 재연결을 시도함
+
+server.js
+socket.on("enter_room", (a,b,c,d,e,f,... ) => {
+        console.log(a,b,c,d,e,f,...);
+    });//하면 다 찍힘 인자가 몇개이던간에
+함수(함수는 반드시 마지막 인자)를 보내는것도 가능한데 백엔드에서 처리가 너무 오래 걸리면 프론트엔드에서
+미리 처리하고 넘길만한것
+
+app.js
+function backendDone(msg){
+    console.log(`backend says : ` + msg);
+}
+socket.emit("enter_room", {payload:input.value}, backendDone);
+//함수를 실행시킬려면 마지막 인자가 프론트에 정의된 함수여야함
+
+server.js
+socket.on("enter_room", (roomName, done) => {
+        console.log(roomName);
+        setTimeout(()=>{
+            done("hello");
+        }, 5000)
+    });
+server.js에서 실행되는 done() 함수는 프론트엔드에 있는 함수만을 실행시킴(사용자가 이상한 코드를 주입해서 
+그 코드를 그대로 실행하면 안되므로)
+server.js는 단순히 프론트엔드에 있는 함수를 실행하라는 명령을 내리는 역할을 함 인자는 백엔드(server.js)에서 준 걸로 실행
+
+#2.4 Rooms
 
 
 
