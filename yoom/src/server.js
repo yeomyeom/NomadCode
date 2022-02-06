@@ -5,8 +5,8 @@ ws.on("connect, 함수") == 각 브라우저와 연결된 서버 동작 정의
 */
 import express from "express"
 import http from "http"
-//import WebSocket from "ws"
-import SocketIO from "socket.io"
+import {Server} from "socket.io"//import WebSocket from "ws"
+import { instrument } from "@socket.io/admin-ui";//import SocketIO from "socket.io"
 
 const app = express();
 //nodeJS
@@ -22,7 +22,16 @@ const handleListen = () => console.log(`Listening on http://localhost:3000 and w
 
 const httpServer = http.createServer(app);//http 서버 생성
 //const wss = new WebSocket.Server({server});//webSoket 서버 
-const wsServer = SocketIO(httpServer);//socket.io 서버
+//const wsServer = SocketIO(httpServer);//socket.io 서버
+const wsServer = new Server(httpServer, {
+    cors: {
+        origin: ["https://admin.socket.io"],
+        credentials: true,
+    },
+})
+instrument(wsServer, {
+    auth: false
+})
 
 /*
 function handleConnetion(socket){//socket은 연결된 브라우저를 의미
@@ -62,15 +71,78 @@ wss.on("connection", handleConnetion);
 // });//매번 새로운 브라우저가 서버로 접속했을때 각 브라우저에 이 동작을 함(이벤트 리스너 주르륵)
 // //이 코드를 안해줘도 됨 기본적으로 on connection 이 정의되어있음
 
+//---------------------------------------------------------------------------
+// //채팅룸
+// function publicRooms(){
+//     const {
+//         sockets: {
+//             adapter:{sids, rooms},
+//      },
+//     } = wsServer;//wsServer.sockets.adapter로부터 sids와 rooms 정보를 가져옴
+//     const publicRooms = [];
+//     rooms.forEach((_, key)=>{//가져온 room 정보로 publicroom인 경우에만 push 하도록 함
+//         if(sids.get(key) === undefined){//sids에 rooms에 있는 key값이 없으면 publicroom임
+//             publicRooms.push(key);
+//         }
+//     });
+//     return publicRooms;
+//     // const sids = wsServer.sockets.adapter.sids;
+//     // const rooms = wsServer.sockets.adapter.rooms;
+// }
 
-wsServer.on("connection", socket => {
-    socket.on("enter_room", (roomName, done) => {
-        console.log(roomName);
-        setTimeout(()=>{
-            done("hello");
-        }, 5000)
-    });//브라우저에서 보내는 emit(이벤트이름, 실행할 함수)
-});//브라우저에서 오는 connection 받기
+// function countRoom(roomName){//방에 참여자 수 세기
+//     return wsServer.sockets.adapter.rooms.get(roomName)?.size;
+// }
+
+// wsServer.on("connection", socket => {
+//     //wsServer.socketsJoin("announcement");// socket 하나하나가 아니라 전체 서버에 announcement 방으로 들어감
+//     socket["nickname"] = "Anonymous"; // 초기 별명 설정
+//     socket.onAny((event)=>{//모든 이벤트들이 발생했을 때 동작함
+//         //console.log(wsServer.sockets.adapter);
+//         console.log(`socket Event : ${event}`);
+//     });
+
+//     socket.on("enter_room", (roomName, done) => {
+//         socket.join(roomName);// room에 접속
+//         done();//브라우저에서 인자로 넘겨준 showRoom 함수를 동작하게 함(브라우저에서 동작함 백엔드에서 동작 안함)
+//         socket.to(roomName).emit("welcome", socket.nickname, countRoom(roomName));
+//         wsServer.sockets.emit("room_change", publicRooms());//enter_room할때 모든 방(wsServer)에 방이 생성되었다고 알림 단 publicroom인 경우에만
+//     });//브라우저에서 보내는 emit(이벤트이름, 실행할 함수)
+
+//     socket.on("disconnecting", ()=>{//사용자가 접속을 종료할때(socket io 정의 이벤트)
+//         socket.rooms.forEach((room)=> socket.to(room).emit("bye", socket.nickname, countRoom(room) - 1));//socket.rooms 모든 방에 bye를 emit함(전송함)
+//         //아직 완전하게 종료하지 않아서 count -1을 해줘야 함 (내가 포함된 숫자가 나올테니까)
+//     });
+
+//     socket.on("disconnect", () =>{//완전히 접속을 끊었을때
+//         wsServer.sockets.emit("room_change", publicRooms());
+//     })
+
+//     socket.on("new_message", (msg, room, done) => {
+//         socket.to(room).emit("new_message", `${socket.nickname} : ${msg}`);//브라우저로 new_message 에 payload:msg 를 보낸다
+//         done();
+//     });
+
+//     socket.on("nickname", nickname => {socket["nickname"] = nickname;});//별명 설정
+
+// });//브라우저에서 오는 connection 받기
+
+wsServer.on("connection", socket =>{
+    socket.on("join_room", (roomName) => {//roomName에 참여
+        socket.join(roomName);
+        socket.to(roomName).emit("Welcome");
+    });
+    socket.on("offer", (offer, roomName)=>{
+        socket.to(roomName).emit("offer", offer);
+    });//이렇게 하면 들어온 브라우저(socket)에게만 가는데 왜냐하면 socket io는 나를 제외한 모든 방 참여자에게 보내기 때문
+    socket.on("answer", (answer, roomName) => {
+        socket.to(roomName).emit("answer", answer);
+    })
+    socket.on("ice", (ice, roomName) => {
+        socket.to(roomName).emit("ice", ice);
+    })
+
+});
 
 httpServer.listen(3000, handleListen);
 

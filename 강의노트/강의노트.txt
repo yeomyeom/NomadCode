@@ -281,18 +281,158 @@ server.js에서 실행되는 done() 함수는 프론트엔드에 있는 함수�
 server.js는 단순히 프론트엔드에 있는 함수를 실행하라는 명령을 내리는 역할을 함 인자는 백엔드(server.js)에서 준 걸로 실행
 
 #2.4 Rooms
+https://socket.io/ 에 모든 API들 설명이 있음
+server.js
+join -> 방에 들어가기
+leave -> 방 나가기
+socket.id = socket io 에서 자동으로 채번한 아이디 보기
+socket.join하고 done();//프론트에서 인자로 넘겨준 showRoom 함수를 동작하게 함
+done()은 서버측에서 프론트가 넘겨준 마지막인자(함수는 반드시 마지막인자 1개 임)를 동작시킴
 
+#2.5 Room Message
+soket.to(방ID).emit(그 방에 보낼 메시지)
 
+#2.6
 
+#2.7 Nickname 설정하기
 
+#2.8 Room 접속자 세기1
+Adapter : 다른 서버들 사이에서 실시간 어플리케이션으 동기화 함
+아무것도 설정 안해놓으면 서버 자체 메모리(in memory) DB를 사용함
+Adapter는 공통된 DB를 이용해 다수의 서버가 통신할 수 있도록 도와주는 역할을 함
 
+console.log(wsServer.sockets.adapter); 코드로 어뎁터를 볼 수 있는데 socket들도 있고 rooms id 값이 있음
+JS 에서 map 은 unique key를 가지는 dictionary 라고 생각하면 됨
+map은 forEach(value, key => console.log(value, key)) 이런식으로 접근할 수 있음
 
+#2.9 Room 접속자 세기2
 
+#2.10 Room 접속자 세기3
 
+#2.11 Admin panel(추가 강의 인거 같음)
+socket IO 에는 정말 많은 기능을 제공해 주는구만
+npm i @socket.io/admin-ui
+server.js에
+import {Server} from "socket.io"//import WebSocket from "ws"
+import { instrument } from "@socket.io/admin-ui";//import SocketIO from "socket.io"
+const wsServer = new Server(httpServer, {//const wsServer = SocketIO(httpServer);//socket.io 서버
+    cors: {
+        origin: ["https://admin.socket.io"],
+        credentials: true,
+    },
+});
+instrument(wsServer, {
+    auth: false
+});
 
+이렇게 설정하고
+https://admin.socket.io
+ServerURL
+http://localhost:3000/admin
+Path 는 빈칸으로 
+Connect 하면 관리자 페이지가 나오고 socket과 room을 제어할 수 있음
 
+#3.0
+1. 비디오 기능 구현
+2. 마이크 카메라 껐다 켰다 하는 버튼
 
+home.pug에서 vidco#myFace(autoplay,playsinline) 에 playsinline는 모바일 브라우저가 필요로 하는 property임
+playsinline 하면 무조건 전체 화면으로 바뀌는것을 방지함
 
+app.js
+async function getMedia(){
+    try{
+        myStream = await navigator.mediaDevices.getUserMedia({
+            audio:true,
+            video: true,
+        });
+        console.log(myStream);
+    }catch(e){
+        console.log(e);
+    }
+}//navigator.mediaDevices.getUserMedia는 유저의 유저미디어 string을 줌
 
+#3.1 
+stream은 track을 가질 수 있음
+track은 비디오 음성 자막 등이 가질 수 있음
 
+#3.2
 
+#3.3 WebRtc
+web realtime communication
+peer to peer 임
+기존에 만든 socketIo 채팅은 peer to servcer 형태였음 socket 객체가 서버에 계속 있으므로
+근데 p to p 는 서버를 거치지 않고 통신 주체끼리 바로 주고 받음
+하지만 일단 누구랑 통신이 가능한지 알기 위해서 signalling이라는 기능이 필요함
+상대방 IP가 뭔지 port가 뭔지 방화벽은 있는지 등등 setting, configuration 정보를 가지고 있음
+이 정보를 원하는 브라우저로 전달해줌 전화 교환원 같은 역할을 함
+
+#3.4 Room
+
+Peer to Peer 연결 과정
+p2p Connecting process 사진 보면됨
+사실 IO에 Room을 만들고 서로 통신하는 과정이 기능이 다 구현 되어있다. 
+브라우저(app.js) 에서 socket.emit("join_room", input.value, startMedia); room 으로 들어가고 
+서버(server.js) 에서 방에 들여보내주고 
+wsServer.on("connection", socket =>{
+    socket.on("join_room", (roomName, done) => {//roomName에 참여
+        socket.join(roomName);
+        done();
+        socket.to(roomName).emit("Welcome");
+    });
+});
+
+서버에서 누가 들어왔다고 socket.to(roomName).emit("Welcome"); 하면
+app.js에서 누가 들어왔는지 console에 찍어볼 수 있음
+
+#3.5
+다른 브라우저끼리 연결을 만드는 것을 만들자 
+
+addstream은 옛날 함수이다.
+대신
+function makeConnection(){
+    myPeerConnection = new RTCPeerConnection();//1.[A]getUserMedia()
+    myStream.getTracks()
+        .forEach(track => myPeerConnection.addTrack(track, myStream));//2.[A]addStream() peerconnection에 stream 추가
+
+    }
+
+offer를 받기 위해서 서버가 필요함
+
+#3.6
+
+#3.7
+RTCIceCandidate
+Internet Connectivity Establishment(인터넷 연결 생성)
+RTCIceCandidate는 WebRTC에 필요한 프로토콜을 의미한다. - 브라우저가 서로 통신할 수 있도록 하는 프로토콜
+다수의 Candidate들이 각각 경쟁에 참여하고 그중 하나만 선택해서 연결에 참여하게됨
+
+안드로이드에서 접속하면 이 서버가 보이지 않음 stun server 가 무엇인지 다음 시간에 학습 할 것이다.
+
+#3.8
+카메라를 바꾸게 되면 상대방 PC에서는 stream이 바껴서 오는게 아니라 그대로 남아있고 해당 stream과도 연결이 끊겨 
+turn off camera 해도 상대방 PC에 반영이 되지 않는다.
+
+sender는 우리의 peer로 보내진 media stream track을 컨트롤 할 수 있게 해줌
+
+이것을 외부에서 보려면 localtunnel이 필요
+
+설치후 cmd창에 lt 입력하면 lt --port 3000
+URL 나오면 7일 동안 유지된다고 되어있는데 여기 접속하면 될꺼임 물론 npm run dev 도 해야겠지만
+
+만약 같은 wifi(네트워크) 가 아니라면 에러가 생기는데 
+stun 서버가 피요하다 stun server는 컴퓨터가 공용IP 주소를 갖게 함(iptime ddns라면 해결되지 하하)
+p2p여서 서로를 찾아야하기 때문
+stun 서버는 공용 주소를 알려줌
+
+#3.10
+근데 나는 안된다...
+createDataChannel 을 사용하면 비디오 오디오 뿐만 아니라 다른 데이터 형태도 전송이 가능하다.
+peer가 너무 많은 경우에는 느려지기 시작함(nP2) 그물망 구조가 되어버림
+그래서 대부분의 회사에서는 selective forwarding unit을 사용함 서버에 의존하는 구조가 됨
+dataChannel을 이용하면 SFU를 쓸건지 그물망을 쓸건지 정하 수 있음
+
+#3.11
+datachennel 을 만들고
+A 콘솔로가서 myDatachannel.send("머시기") 하면 B 콘솔에 data 속성 부분에 머시기가 보이는 것을 볼 수 있다.
+B 콘솔에서 send 하는 것도 마찬가지
